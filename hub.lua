@@ -12,7 +12,7 @@ local Window = Rayfield:CreateWindow({
  
     ConfigurationSaving = {
        Enabled = true,
-       FolderName = nil, -- Create a custom folder for your hub/game
+       FolderName = Minhub, -- Create a custom folder for your hub/game
        FileName = "Min Hub"
     },
  
@@ -38,6 +38,7 @@ local Window = Rayfield:CreateWindow({
  local aim = Window:CreateTab("Aim", "crosshair") -- Title, Image
  local con = Window:CreateTab("Config", "view") -- Title, Image
  local mis = Window:CreateTab("Misc", "chevron-last") -- Title, Image
+ local wor = Window:CreateTab("World", "earth") -- Title, Image
 
  local Toggle = vis:CreateToggle({
     Name = "Skeleton Esp",
@@ -669,7 +670,7 @@ smoothness = 1
 -- Slider for Smoothness
 local SmoothnessSlider = con:CreateSlider({
     Name = "Aimbot Smoothness",
-    Range = {0, 10},  -- Smoothness range from 0 (instant) to 1 (slower)
+    Range = {0.9, 1},  -- Smoothness range from 0 (instant) to 1 (slower)
     Increment = 0.01,  -- Small increment to adjust smoothness
     Suffix = "Higher is faster",  -- Label for the value
     CurrentValue = 1,  -- Default value from aimbot settings
@@ -681,46 +682,8 @@ local SmoothnessSlider = con:CreateSlider({
 })
 
 
-local Button = mis:CreateButton({
-    Name = "Change name",
-    Callback = function()
-        local Players = game:GetService("Players")
-
-        -- Variable to store the new display name
-        local newDisplayName = inputname  -- Replace with the name you want to set
-        
-        -- Function to change the player's display name locally
-        local function changeDisplayName(newName)
-            local player = Players.LocalPlayer
-        
-            -- Ensure the new name is a string and not empty
-            if type(newName) == "string" and newName ~= "" then
-                -- Change the player's display name locally
-                player.DisplayName = newName
-            end
-        end
-        
-        -- Change the display name as soon as the script runs
-        changeDisplayName(newDisplayName)
-        
-    end,
- })
-
-inputname = "Kathub on top"
-
-local Input = mis:CreateInput({
-    Name = "name",
-    CurrentValue = "",
-    PlaceholderText = "Kathub on top",
-    RemoveTextAfterFocusLost = false,
-    Flag = "Input1",
-    Callback = function(Text)
-    text = inputname
-    end,
- })
-
  local Toggle = mis:CreateToggle({
-    Name = "Wireframe World",
+    Name = "Wireframe World [Partially Broken]",
     CurrentValue = false,
     Flag = "Toggle8", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
     Callback = function(Value)
@@ -1002,6 +965,304 @@ end
 
 Players.PlayerAdded:Connect(setupPlayer)
 RunService.RenderStepped:Connect(updateESP)
+
+    end,
+ })
+
+walkSpeed = 50
+
+ local Button = mis:CreateButton({
+    Name = "Enable Walk Speed changer",
+    Callback = function()
+          -- Set the initial WalkSpeed here
+
+        local function updatePlayerSpeed()
+            -- Access the local player's character
+            local player = game.Players.LocalPlayer
+            local character = player.Character or player.CharacterAdded:Wait()
+            
+            -- Wait for the Humanoid to load
+            local humanoid = character:WaitForChild("Humanoid")
+            
+            -- Continuously update the WalkSpeed
+            while true do
+                humanoid.WalkSpeed = walkSpeed
+                wait(0.1)  -- Update every 0.1 seconds to prevent constant setting
+            end
+        end
+        
+        -- Call the function to start updating speed
+        updatePlayerSpeed()
+        
+    end,
+ })
+
+
+ local Toggle = aim:CreateToggle({
+    Name = "TriggerBot",
+    CurrentValue = false,
+    Flag = "Toggle11", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        local player = game:GetService("Players").LocalPlayer
+        local mouse = player:GetMouse()
+        local runService = game:GetService("RunService")
+        local userInputService = game:GetService("UserInputService")
+    
+        -- Variables
+        local buttonToHold = Enum.UserInputType.MouseButton2 -- Default: Right Mouse Button
+        local delayTime = 0.1 -- Delay between mouse press and release
+    
+        local buttonHeld = false
+    
+        -- Detect button press and release
+        userInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == buttonToHold then
+                buttonHeld = true
+            end
+        end)
+    
+        userInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == buttonToHold then
+                buttonHeld = false
+            end
+        end)
+    
+        -- Main loop
+        runService.RenderStepped:Connect(function()
+            if buttonHeld and mouse.Target and mouse.Target.Parent:FindFirstChild("Humanoid") and mouse.Target.Parent.Name ~= player.Name then
+                mouse1press()
+                wait(delayTime)
+                mouse1release()
+            end
+        end)
+    
+    end,
+ })
+
+delayTime = 0.1
+
+ local Slider = con:CreateSlider({
+    Name = "Trigger Bot Delay",
+    Range = {0, 1},
+    Increment = 0.01,
+    Suffix = "Milliseconds",
+    CurrentValue = 0.1,
+    Flag = "Slider4", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+delayTime = Value
+    end,
+ })
+
+
+
+ local Toggle = vis:CreateToggle({
+    Name = "Skeleton Esp [R6 Rig Only]",
+    CurrentValue = false,
+    Flag = "Toggle12", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+-- Configuration
+local ESPSettings = {
+    Enabled = true,
+    LineColor = Color3.fromRGB(0, 255, 0), -- Bright green
+    LineThickness = 2,
+    Transparency = 1
+}
+
+-- Utility function to create lines
+local function createLine()
+    local line = Drawing.new("Line")
+    line.Visible = false
+    line.Color = ESPSettings.LineColor
+    line.Thickness = ESPSettings.LineThickness
+    line.Transparency = ESPSettings.Transparency
+    return line
+end
+
+-- Map body parts for skeleton
+local SkeletonMap = {
+    {"Head", "UpperTorso"},
+    {"UpperTorso", "LowerTorso"},
+    {"UpperTorso", "LeftUpperArm"},
+    {"LeftUpperArm", "LeftLowerArm"},
+    {"LeftLowerArm", "LeftHand"},
+    {"UpperTorso", "RightUpperArm"},
+    {"RightUpperArm", "RightLowerArm"},
+    {"RightLowerArm", "RightHand"},
+    {"LowerTorso", "LeftUpperLeg"},
+    {"LeftUpperLeg", "LeftLowerLeg"},
+    {"LeftLowerLeg", "LeftFoot"},
+    {"LowerTorso", "RightUpperLeg"},
+    {"RightUpperLeg", "RightLowerLeg"},
+    {"RightLowerLeg", "RightFoot"}
+}
+
+-- Table to store player ESP lines
+local ESPLines = {}
+
+-- Update ESP for a player
+local function updateESP(player)
+    local character = player.Character
+    if not character then return end
+
+    for _, pair in ipairs(SkeletonMap) do
+        local part0 = character:FindFirstChild(pair[1])
+        local part1 = character:FindFirstChild(pair[2])
+
+        if part0 and part1 and part0:IsA("BasePart") and part1:IsA("BasePart") then
+            local line = ESPLines[player][pair] or createLine()
+
+            local pos0, onScreen0 = Camera:WorldToViewportPoint(part0.Position)
+            local pos1, onScreen1 = Camera:WorldToViewportPoint(part1.Position)
+
+            if onScreen0 and onScreen1 then
+                line.Visible = ESPSettings.Enabled
+                line.From = Vector2.new(pos0.X, pos0.Y)
+                line.To = Vector2.new(pos1.X, pos1.Y)
+            else
+                line.Visible = false
+            end
+
+            ESPLines[player][pair] = line
+        end
+    end
+end
+
+-- Cleanup ESP lines for a player
+local function cleanupESP(player)
+    if ESPLines[player] then
+        for _, line in pairs(ESPLines[player]) do
+            line:Remove()
+        end
+        ESPLines[player] = nil
+    end
+end
+
+-- Setup ESP for a player
+local function setupESP(player)
+    ESPLines[player] = {}
+
+    player.CharacterAdded:Connect(function()
+        cleanupESP(player)
+        ESPLines[player] = {}
+    end)
+
+    player.CharacterRemoving:Connect(function()
+        cleanupESP(player)
+    end)
+end
+
+-- Initialize ESP for all players
+local function initializeESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            setupESP(player)
+        end
+    end
+
+    Players.PlayerAdded:Connect(function(player)
+        setupESP(player)
+    end)
+
+    Players.PlayerRemoving:Connect(function(player)
+        cleanupESP(player)
+    end)
+end
+
+-- Main Render Loop
+RunService.RenderStepped:Connect(function()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer and ESPLines[player] then
+            updateESP(player)
+        end
+    end
+end)
+
+-- Start the ESP system
+initializeESP()
+
+    end,
+ })
+
+
+ local Toggle = wor:CreateToggle({
+    Name = "Fullbright",
+    CurrentValue = false,
+    Flag = "Toggle13", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+-- Fullbright Script
+
+-- Services
+local Lighting = game:GetService("Lighting")
+
+-- Function to enable fullbright
+local function EnableFullbright()
+    Lighting.Ambient = Color3.fromRGB(255, 255, 255)  -- Full brightness
+    Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)  -- Full brightness outside
+    Lighting.Brightness = 2  -- Increase brightness level
+    Lighting.ShadowSoftness = 0  -- No shadows
+    Lighting.FogStart = 0  -- Disable fog
+    Lighting.FogEnd = 100000  -- Extend fog range to make it invisible
+end
+
+-- Call the function to enable fullbright
+EnableFullbright()
+
+-- Optional: Set up a toggle keybind to turn it off and on
+local UserInputService = game:GetService("UserInputService")
+local isFullbright = true
+local toggleKey = Enum.KeyCode.F -- Change this key if desired
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == toggleKey then
+        isFullbright = not isFullbright
+        if isFullbright then
+            EnableFullbright()
+        else
+            -- Restore default lighting
+            Lighting.Ambient = Color3.fromRGB(127, 127, 127)  -- Default ambient light
+            Lighting.OutdoorAmbient = Color3.fromRGB(127, 127, 127)  -- Default outdoor ambient light
+            Lighting.Brightness = 1  -- Default brightness
+            Lighting.ShadowSoftness = 0.5  -- Default shadow softness
+            Lighting.FogStart = 0  -- Default fog start
+            Lighting.FogEnd = 100000  -- Default fog end
+        end
+    end
+end)
+
+    end,
+ })
+
+playerfov = 60
+
+ local Slider = mis:CreateSlider({
+    Name = "FOV",
+    Range = {1, 300},
+    Increment = 1,
+    Suffix = "Degrees",
+    CurrentValue = 60,
+    Flag = "Slider5", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+playerfov = Value 
+    end,
+ })
+
+ local Button = mis:CreateButton({
+    Name = "Update Fov ",
+    Callback = function()
+-- Place this script inside StarterPlayerScripts
+
+local targetFOV = playerfov -- Set your desired FOV value here
+local camera = workspace.CurrentCamera
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    camera.FieldOfView = targetFOV
+end)
 
     end,
  })
